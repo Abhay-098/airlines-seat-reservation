@@ -1,0 +1,51 @@
+service: serverless-airline-reservations
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: dev
+  region: us-east-1
+  profile: default  # Replace with your AWS CLI profile name
+  # Configure IAM permissions for the Lambda function
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:DeleteItem
+            - dynamodb:Scan
+          Resource: "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.DYNAMODB_TABLE}"
+  environment:
+    DYNAMODB_TABLE: seat-reservations-${sls:stage}
+
+functions:
+  api:
+    handler: handler.handle_request  # Corresponds to handler.py and the handle_request function
+    events:
+      - http:
+          path: /seats
+          method: get
+      - http:
+          path: /reserve
+          method: post
+      - http:
+          path: /cancel
+          method: post
+
+resources:
+  Resources:
+    SeatsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        AttributeDefinitions:
+          - AttributeName: seatId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: seatId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
