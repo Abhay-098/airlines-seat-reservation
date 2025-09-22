@@ -1,49 +1,45 @@
-service: serverless-airline-reservations
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Serverless Airline Seat Reservation System
 
-provider:
-  name: aws
-  runtime: python3.9
-  stage: dev
-  region: us-east-1
-  profile: default  # Replace with your AWS CLI profile name
-  # Configure IAM permissions for the Lambda function
-  iam:
-    role:
-      statements:
-        - Effect: Allow
-          Action:
-            - dynamodb:GetItem
-            - dynamodb:PutItem
-            - dynamodb:DeleteItem
-            - dynamodb:Scan
-          Resource: "arn:aws:dynamodb:us-east-1:${aws:accountId}:table/seat-reservations-dev"
-  environment:
-    DYNAMODB_TABLE: seat-reservations-dev
+Resources:
+  SeatReservationFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: handler.handle_request
+      Runtime: python3.9
+      CodeUri: .
+      MemorySize: 128
+      Timeout: 30
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /seats
+            Method: GET
+        ReserveEvent:
+          Type: Api
+          Properties:
+            Path: /reserve
+            Method: POST
+        CancelEvent:
+          Type: Api
+          Properties:
+            Path: /cancel
+            Method: POST
+      Policies:
+        - DynamoDBReadWritePolicy:
+            TableName: !Ref SeatReservationTable
 
-functions:
-  api:
-    handler: handler.handle_request  # Corresponds to handler.py and the handle_request function
-    events:
-      - http:
-          path: /seats
-          method: get
-      - http:
-          path: /reserve
-          method: post
-      - http:
-          path: /cancel
-          method: post
+  SeatReservationTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: seat-reservations-dev
+      AttributeDefinitions:
+        - AttributeName: seatId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: seatId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
 
-resources:
-  Resources:
-    SeatsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: seat-reservations-dev
-        AttributeDefinitions:
-          - AttributeName: seatId
-            AttributeType: S
-        KeySchema:
-          - AttributeName: seatId
-            KeyType: HASH
-        BillingMode: PAY_PER_REQUEST
