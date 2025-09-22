@@ -1,7 +1,5 @@
 service: serverless-airline-reservations
 
-frameworkVersion: "3"
-
 provider:
   name: aws
   runtime: python3.9
@@ -18,9 +16,9 @@ provider:
             - dynamodb:PutItem
             - dynamodb:DeleteItem
             - dynamodb:Scan
-          Resource: "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.DYNAMODB_TABLE}"
+          Resource: "arn:aws:dynamodb:us-east-1:${aws:accountId}:table/seat-reservations-dev"
   environment:
-    DYNAMODB_TABLE: seat-reservations-${sls:stage}
+    DYNAMODB_TABLE: seat-reservations-dev
 
 functions:
   api:
@@ -41,7 +39,7 @@ resources:
     SeatsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        TableName: seat-reservations-dev
         AttributeDefinitions:
           - AttributeName: seatId
             AttributeType: S
